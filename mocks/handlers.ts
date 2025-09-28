@@ -64,13 +64,11 @@ export const handlers = [
     );
   }),
 
-  // PUT /api/users/me
   http.put('*/api/users/me', async ({ request }) => {
     const authHeader = request.headers.get('Authorization');
     const updateData = await request.json() as { name: string };
     
     if ((authHeader === `Bearer ${mockTokens.accessToken}` || authHeader === 'Bearer new-mock-access-token-789') && currentUserId) {
-      // Actualizar el usuario en la base de datos
       const updatedUser = updateUserInDatabase(currentUserId, { name: updateData.name });
       
       if (updatedUser) {

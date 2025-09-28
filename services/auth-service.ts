@@ -35,7 +35,6 @@ const initialMockUsers: MockUser[] = [
 ];
 
 class AuthService {
-  // Cargar usuarios desde localStorage o usar los iniciales
   private getUsersDatabase(): MockUser[] {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('mockUsersDatabase');
@@ -46,14 +45,12 @@ class AuthService {
     return [...initialMockUsers];
   }
 
-  // Guardar usuarios en localStorage
   private saveUsersDatabase(users: MockUser[]): void {
     if (typeof window !== 'undefined') {
       localStorage.setItem('mockUsersDatabase', JSON.stringify(users));
     }
   }
 
-  // Obtener usuario actual desde localStorage
   private getCurrentUserFromStorage(): MockUser {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('mockCurrentUser');
@@ -64,7 +61,6 @@ class AuthService {
     return { ...initialMockUsers[0] };
   }
 
-  // Guardar usuario actual en localStorage
   private saveCurrentUserToStorage(user: MockUser): void {
     if (typeof window !== 'undefined') {
       localStorage.setItem('mockCurrentUser', JSON.stringify(user));
@@ -80,7 +76,6 @@ class AuthService {
     );
     
     if (user) {
-      // Guardar usuario actual
       this.saveCurrentUserToStorage(user);
       
       const response: AuthResponse = {
@@ -140,16 +135,13 @@ class AuthService {
     const currentUser = this.getCurrentUserFromStorage();
     const usersDatabase = this.getUsersDatabase();
     
-    // Actualizar usuario actual
     const updatedCurrentUser: MockUser = {
       ...currentUser,
       ...userData
     };
     
-    // Guardar usuario actual actualizado
     this.saveCurrentUserToStorage(updatedCurrentUser);
     
-    // Actualizar en la "base de datos"
     const userIndex = usersDatabase.findIndex((u: MockUser) => u.id === currentUser.id);
     if (userIndex !== -1) {
       usersDatabase[userIndex] = {
@@ -167,7 +159,6 @@ class AuthService {
     };
   }
 
-  // Métodos de almacenamiento en localStorage
   setTokens(accessToken: string, refreshToken: string): void {
     if (typeof window !== 'undefined') {
       localStorage.setItem('accessToken', accessToken);
@@ -204,7 +195,6 @@ class AuthService {
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('tokenExpiry');
       localStorage.removeItem('mockCurrentUser');
-      // No limpiar mockUsersDatabase para mantener los cambios
     }
   }
 
@@ -235,7 +225,6 @@ class AuthService {
     }
   }
 
-  // Método auxiliar para validar token (simulado)
   private isValidToken(token: string): boolean {
     const validTokens = [
       'mock-access-token-123',
@@ -244,7 +233,6 @@ class AuthService {
     return validTokens.includes(token);
   }
 
-  // Método para resetear datos (útil para testing)
   resetMockData(): void {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('mockUsersDatabase');
