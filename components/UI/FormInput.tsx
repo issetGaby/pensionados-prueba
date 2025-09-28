@@ -32,7 +32,7 @@ const FormInput: React.FC<FormInputProps> = ({
       </label>
 
       <div className="relative flex items-center w-full">
-        {/* Icono a la izquierda */}
+        
         {icon && (
           <span className="absolute left-3 text-gray-500 flex items-center pointer-events-none">
             {<Image src={icon} width={22} height={22} alt="icon"/>}

@@ -15,16 +15,14 @@ export function middleware(request: NextRequest) {
     pathname.startsWith(route)
   );
 
-  // Simular verificación de autenticación en middleware
-  // En un caso real, verificarías un token JWT en cookies
-  const hasAuth = request.cookies.get('auth-token'); // Esto es simulado
+  const hasAuth = request.cookies.get('auth-token');
 
   if (isProtectedRoute && !hasAuth) {
     const loginUrl = new URL('/login', request.url);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Redirigir al dashboard si está autenticado y trata de acceder a login
+  
   if (isAuthRoute && hasAuth) {
     const dashboardUrl = new URL('/dashboard', request.url);
     return NextResponse.redirect(dashboardUrl);

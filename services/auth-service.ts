@@ -1,7 +1,16 @@
 import { LoginCredentials, AuthResponse, RefreshResponse, User } from '@/types/auth';
 
-// Datos mock para todos los entornos
-const mockUsers = [
+// Interface para los usuarios del mock (incluye password)
+interface MockUser {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  createdAt: string;
+}
+
+// Datos mock iniciales
+const initialMockUsers: MockUser[] = [
   {
     id: '1',
     name: 'Gabriela Aguilar',
@@ -25,23 +34,56 @@ const mockUsers = [
   },
 ];
 
-// Estado en memoria para simular base de datos
-let currentUser = { ...mockUsers[0] };
-let usersDatabase = [...mockUsers];
-
 class AuthService {
+  // Cargar usuarios desde localStorage o usar los iniciales
+  private getUsersDatabase(): MockUser[] {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('mockUsersDatabase');
+      if (stored) {
+        return JSON.parse(stored) as MockUser[];
+      }
+    }
+    return [...initialMockUsers];
+  }
+
+  // Guardar usuarios en localStorage
+  private saveUsersDatabase(users: MockUser[]): void {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mockUsersDatabase', JSON.stringify(users));
+    }
+  }
+
+  // Obtener usuario actual desde localStorage
+  private getCurrentUserFromStorage(): MockUser {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('mockCurrentUser');
+      if (stored) {
+        return JSON.parse(stored) as MockUser;
+      }
+    }
+    return { ...initialMockUsers[0] };
+  }
+
+  // Guardar usuario actual en localStorage
+  private saveCurrentUserToStorage(user: MockUser): void {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mockCurrentUser', JSON.stringify(user));
+    }
+  }
+
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    // Simular delay de red
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    const user = usersDatabase.find(u => 
+    const usersDatabase = this.getUsersDatabase();
+    const user = usersDatabase.find((u: MockUser) => 
       u.email === credentials.email && u.password === credentials.password
     );
     
     if (user) {
-      currentUser = { ...user };
+      // Guardar usuario actual
+      this.saveCurrentUserToStorage(user);
       
-      const response = {
+      const response: AuthResponse = {
         accessToken: 'mock-access-token-123',
         refreshToken: 'mock-refresh-token-456',
         user: {
@@ -62,7 +104,7 @@ class AuthService {
   async refreshToken(refreshToken: string): Promise<RefreshResponse> {
     await new Promise(resolve => setTimeout(resolve, 300));
     
-    const response = {
+    const response: RefreshResponse = {
       accessToken: 'new-mock-access-token-789',
       refreshToken: 'new-mock-refresh-token-012',
     };
@@ -74,10 +116,11 @@ class AuthService {
   async getCurrentUser(accessToken: string): Promise<User> {
     await new Promise(resolve => setTimeout(resolve, 300));
     
-    // Verificar token (simulado)
     if (!this.isValidToken(accessToken)) {
       throw new Error('Token inválido');
     }
+    
+    const currentUser = this.getCurrentUserFromStorage();
     
     return {
       id: currentUser.id,
@@ -94,26 +137,33 @@ class AuthService {
       throw new Error('Token inválido');
     }
     
+    const currentUser = this.getCurrentUserFromStorage();
+    const usersDatabase = this.getUsersDatabase();
+    
     // Actualizar usuario actual
-    currentUser = {
+    const updatedCurrentUser: MockUser = {
       ...currentUser,
       ...userData
     };
     
+    // Guardar usuario actual actualizado
+    this.saveCurrentUserToStorage(updatedCurrentUser);
+    
     // Actualizar en la "base de datos"
-    const userIndex = usersDatabase.findIndex(u => u.id === currentUser.id);
+    const userIndex = usersDatabase.findIndex((u: MockUser) => u.id === currentUser.id);
     if (userIndex !== -1) {
       usersDatabase[userIndex] = {
         ...usersDatabase[userIndex],
         ...userData
       };
+      this.saveUsersDatabase(usersDatabase);
     }
     
     return {
-      id: currentUser.id,
-      name: currentUser.name,
-      email: currentUser.email,
-      createdAt: currentUser.createdAt
+      id: updatedCurrentUser.id,
+      name: updatedCurrentUser.name,
+      email: updatedCurrentUser.email,
+      createdAt: updatedCurrentUser.createdAt
     };
   }
 
@@ -122,7 +172,7 @@ class AuthService {
     if (typeof window !== 'undefined') {
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
-      localStorage.setItem('tokenExpiry', (Date.now() + (15 * 60 * 1000)).toString()); // 15 minutos
+      localStorage.setItem('tokenExpiry', (Date.now() + (15 * 60 * 1000)).toString());
     }
   }
 
@@ -153,6 +203,8 @@ class AuthService {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('tokenExpiry');
+      localStorage.removeItem('mockCurrentUser');
+      // No limpiar mockUsersDatabase para mantener los cambios
     }
   }
 
@@ -163,12 +215,10 @@ class AuthService {
       return null;
     }
 
-    // Si el token no está expirado, devolverlo
     if (!this.isTokenExpired()) {
       return accessToken;
     }
 
-    // Si está expirado, intentar refrescar
     try {
       const refreshToken = this.getRefreshToken();
       if (!refreshToken) {
@@ -196,9 +246,11 @@ class AuthService {
 
   // Método para resetear datos (útil para testing)
   resetMockData(): void {
-    currentUser = { ...mockUsers[0] };
-    usersDatabase = [...mockUsers];
-    this.clearTokens();
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('mockUsersDatabase');
+      localStorage.removeItem('mockCurrentUser');
+      this.clearTokens();
+    }
   }
 }
 
